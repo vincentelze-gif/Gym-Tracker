@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#14161A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Gym Log">
+<title>Gym Log</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #14161A; --surface: #1E222A; --surface-2: #262B34; --border: #313742;
+    --text: #F2F3F5; --muted: #9AA0AB; --faint: #6B7280;
+    --red: #E5383B; --blue: #3B82C4; --green: #2CB67D; --amber: #E8A33D;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--bg); }
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  #app { max-width: 520px; margin: 0 auto; padding: 22px 18px 40px; min-height: 100vh; }
+
+  .view { animation: rise .28s ease; }
+  @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .view { animation: none; } }
+
+  .topbar { display: flex; align-items: center; gap: 12px; margin-bottom: 22px; min-height: 32px; }
+  .back {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    font-size: 15px; font-weight: 500; padding: 8px 14px 8px 10px; border-radius: 10px;
+    cursor: pointer; display: inline-flex; align-items: center; gap: 4px;
+  }
+  .back:active { background: var(--surface-2); }
+
+  .eyebrow { font-family: 'Oswald'; font-weight: 600; letter-spacing: .22em; font-size: 12px; color: var(--faint); text-transform: uppercase; margin-bottom: 4px; }
+  h1 { font-family: 'Oswald'; font-weight: 700; font-size: 34px; letter-spacing: .01em; line-height: 1.05; }
+  .sub { color: var(--muted); font-size: 14px; margin-top: 6px; }
+  .log-head { text-align: center; }
+
+  .cards { display: flex; flex-direction: column; gap: 16px; margin-top: 26px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 22px; padding: 32px 20px; cursor: pointer; min-height: 104px;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    transition: transform .12s ease, background .12s ease;
+  }
+  .card:active { transform: scale(.985); background: var(--surface-2); }
+  .card .c-name { font-family: 'Oswald'; font-weight: 600; font-size: 26px; }
+  .card .c-meta { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .chev { color: var(--faint); font-size: 22px; }
+
+  /* Kategorie-Abschnitte */
+  .cat { margin-top: 28px; }
+  .cat:first-of-type { margin-top: 22px; }
+  .cat-head { font-family: 'Oswald'; font-weight: 600; font-size: 21px; letter-spacing: .06em; text-transform: uppercase; color: var(--text); margin-bottom: 12px; }
+  .cat-empty { color: var(--faint); font-size: 13.5px; padding: 6px 2px 2px; }
+
+  .list { display: flex; flex-direction: column; gap: 10px; }
+  .row {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px;
+    cursor: pointer; display: flex; align-items: center; justify-content: space-between; gap: 10px; transition: transform .12s ease, background .12s ease;
+  }
+  .row:active { transform: scale(.99); background: var(--surface-2); }
+  .row.confirm { cursor: default; transform: none; }
+  .row .r-name { font-weight: 500; font-size: 16px; }
+  .row .r-meta { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  .row .r-right { display: flex; align-items: center; gap: 8px; }
+
+  .icon-btn { background: transparent; border: none; color: var(--faint); font-size: 18px; cursor: pointer; padding: 6px; line-height: 1; border-radius: 8px; }
+  .icon-btn:active { background: var(--surface-2); color: var(--red); }
+
+  .mini { border: none; border-radius: 8px; padding: 9px 13px; font-family: 'Inter'; font-size: 13px; font-weight: 600; cursor: pointer; background: var(--surface-2); color: var(--muted); }
+  .mini.danger { background: var(--red); color: #fff; }
+
+  .add-btn {
+    width: 100%; margin-top: 10px; background: transparent; border: 1.5px dashed var(--border);
+    color: var(--muted); padding: 12px; border-radius: 12px; font-size: 14px; font-weight: 500; cursor: pointer;
+  }
+  .add-btn:active { border-color: var(--muted); color: var(--text); }
+
+  .add-form { display: flex; gap: 8px; margin-top: 10px; }
+  .add-form input {
+    flex: 1; min-width: 0; background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    font-family: 'Inter'; font-size: 15px; padding: 13px; border-radius: 12px;
+  }
+  .add-form input:focus { outline: 2px solid var(--red); outline-offset: -1px; border-color: transparent; }
+  .add-form button { border: none; border-radius: 12px; padding: 0 14px; font-family: 'Inter'; font-weight: 600; font-size: 14px; cursor: pointer; white-space: nowrap; }
+  .btn-primary { background: var(--red); color: #fff; }
+  .btn-ghost { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+
+  /* Log-Screen */
+  .table { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 16px 18px; margin-top: 30px; }
+  .grid-head, .set-row { display: grid; grid-template-columns: 74px 1fr 1fr 34px; gap: 8px; align-items: center; }
+  .grid-head { padding: 0 2px 8px; }
+  .grid-head span { font-family: 'Oswald'; font-weight: 600; letter-spacing: .12em; font-size: 11px; color: var(--faint); text-transform: uppercase; text-align: center; }
+  .grid-head span:first-child { text-align: left; }
+  .set-row { margin-bottom: 8px; }
+  .set-tag { font-family: 'Oswald'; font-weight: 600; font-size: 14px; text-align: center; padding: 8px 4px; border-radius: 8px; background: var(--surface-2); color: var(--text); }
+  .set-tag.warm { background: rgba(232,163,61,.14); color: var(--amber); font-size: 12px; letter-spacing: .04em; }
+  .set-row input { width: 100%; background: var(--bg); border: 1px solid var(--border); color: var(--text); font-family: 'Oswald'; font-weight: 600; font-size: 20px; padding: 9px 6px; border-radius: 8px; text-align: center; }
+  .set-row input:focus { outline: 2px solid var(--red); outline-offset: -1px; border-color: transparent; }
+  .row-add { display: flex; gap: 8px; margin-top: 4px; }
+  .row-add button { flex: 1; background: transparent; border: 1.5px dashed var(--border); color: var(--muted); padding: 11px; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; }
+  .row-add button:active { border-color: var(--muted); color: var(--text); }
+  .save-btn { width: 100%; margin-top: 14px; background: var(--red); color: #fff; border: none; padding: 16px; border-radius: 12px; font-family: 'Oswald'; font-weight: 600; font-size: 18px; letter-spacing: .04em; cursor: pointer; text-transform: uppercase; transition: background .2s ease; }
+  .save-btn:active { filter: brightness(.92); }
+
+  .empty { text-align: center; color: var(--muted); padding: 40px 20px; background: var(--surface); border: 1px dashed var(--border); border-radius: var(--radius); margin-top: 22px; font-size: 14.5px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+  // ---------- Daten ----------
+  const KEY = 'gymlog.v2';
+  const uid = () => Math.random().toString(36).slice(2, 9);
+  function defaultSets(){
+    return [
+      { type:'warmup', weight:'', reps:'' },
+      { type:'work', weight:'', reps:'' },
+      { type:'work', weight:'', reps:'' },
+      { type:'work', weight:'', reps:'' },
+    ];
+  }
+
+  // Kategorie-Struktur je Split: [Kategoriename, [Übungen]]. Leerer Name = keine Überschrift.
+  const CAT_DEFS = {
+    push:  [['Brust', ['Kurzhantel Bankdrücken','Kurzhantel Schrägbankdrücken','Butterfly']], ['Schultern', ['Schulterdrücken','Seitheben KT']], ['Trizeps', ['Single-Arm Pushdown']]],
+    pull:  [['Rücken', ['T-Bar Row','Rudermaschine','Kreuzheben']], ['Bizeps', ['FA Curls','Curl-Maschine','Bizeps Curls KT','Hammer Curls KT']]],
+    beine: [['', ['Kniebeugen','Beinpresse','Rumänisches Kreuzheben','Wadenheben']]],
+  };
+  // Für die Migration alter Daten: Übungsname -> Kategoriename
+  const LEGACY = {
+    push: {'bankdrücken':'Brust','schrägbankdrücken':'Brust','schulterdrücken':'Schultern','seitheben':'Schultern','trizeps':'Trizeps','trizepsdrücken':'Trizeps','dips':'Trizeps'},
+    pull: {'klimmzüge':'Rücken','rudern':'Rücken','latzug':'Rücken','bizeps':'Bizeps','bizeps-curls':'Bizeps','hammer-curls':'Bizeps'},
+  };
+
+  function seedSplit(id, name, color){
+    return { id, name, color, categories: CAT_DEFS[id].map(([cname, exs]) => ({
+      id: uid(), name: cname, exercises: exs.map(n => ({ id: uid(), name: n, sets: defaultSets() }))
+    })) };
+  }
+  const SEED = { splits: [ seedSplit('push','Push','red'), seedSplit('pull','Pull','blue'), seedSplit('beine','Beine','green') ] };
+
+  // ---------- Migration ----------
+  function normEx(e){
+    if (!Array.isArray(e.sets)){
+      if (Array.isArray(e.entries) && e.entries.length){
+        const last = e.entries[e.entries.length - 1];
+        e.sets = Array.isArray(last.sets)
+          ? last.sets.map(x => ({ type: x.type||'work', weight: String(x.weight??''), reps: String(x.reps??'') }))
+          : Array.from({length: Math.max(1, parseInt(last.sets)||1)}, () => ({ type:'work', weight:String(last.weight??''), reps:String(last.reps??'') }));
+      } else {
+        e.sets = defaultSets();
+      }
+    }
+    delete e.entries;
+    return e;
+  }
+  function migrateFlat(split){
+    const defs = CAT_DEFS[split.id];
+    if (!defs) return [{ id: uid(), name: '', exercises: (split.exercises||[]).map(normEx) }];
+    const cats = defs.map(([cname]) => ({ id: uid(), name: cname, exercises: [] }));
+    const byName = nm => cats.find(c => c.name === nm) || cats[0];
+    (split.exercises||[]).forEach(e => {
+      const ne = normEx(e);
+      const target = (LEGACY[split.id]||{})[(e.name||'').toLowerCase()];
+      (target ? byName(target) : cats[0]).exercises.push(ne);
+    });
+    return cats;
+  }
+  function normalize(d){
+    (d.splits||[]).forEach(s => {
+      if (Array.isArray(s.categories)){
+        s.categories.forEach(c => c.exercises = (c.exercises||[]).map(normEx));
+      } else {
+        s.categories = migrateFlat(s);
+        delete s.exercises;
+      }
+    });
+    return d;
+  }
+
+  let data;
+  try {
+    const raw = localStorage.getItem(KEY);
+    data = raw ? normalize(JSON.parse(raw)) : structuredClone(SEED);
+  } catch (e) { data = structuredClone(SEED); }
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(data)); } catch (e) {} }
+
+  // ---------- Navigation & UI-Zustand ----------
+  let nav = { screen: 'splits', splitId: null, exerciseId: null };
+  let draft = null;
+  let addingInCat = null;   // Kategorie-ID, in der gerade das Eingabefeld offen ist
+  let confirmDelId = null;  // Übungs-ID, für die "Löschen?" angezeigt wird
+  function go(screen, splitId, exerciseId){
+    addingInCat = null; confirmDelId = null;
+    nav = { screen, splitId: splitId ?? nav.splitId, exerciseId: exerciseId ?? nav.exerciseId };
+    render();
+  }
+  const app = document.getElementById('app');
+  const getSplit = id => data.splits.find(s => s.id === id);
+  const getEx = (split, id) => { for (const c of split.categories){ const e = c.exercises.find(x => x.id === id); if (e) return e; } return null; };
+  const countEx = split => split.categories.reduce((a, c) => a + c.exercises.length, 0);
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const toNum = v => parseFloat(String(v).replace(',', '.'));
+  const numOk = v => v !== '' && v != null && !isNaN(toNum(v));
+
+  // ---------- Render ----------
+  function render(){
+    if (nav.screen === 'splits')    return renderSplits();
+    if (nav.screen === 'exercises') return renderExercises();
+    if (nav.screen === 'log')       return renderLog();
+  }
+
+  function renderSplits(){
+    const cards = data.splits.map(s => {
+      const n = countEx(s);
+      return `<div class="card" data-split="${s.id}">
+        <div class="c-name">${esc(s.name)}</div>
+        <div class="c-meta">${n} ${n === 1 ? 'Übung' : 'Übungen'}</div>
+      </div>`;
+    }).join('');
+    app.innerHTML = `<div class="view">
+      <div class="eyebrow">Gym Log</div>
+      <h1>Splits</h1>
+      <div class="sub">Wähl deinen Trainingstag.</div>
+      <div class="cards">${cards}</div>
+    </div>`;
+    app.querySelectorAll('.card').forEach(c => c.addEventListener('click', () => go('exercises', c.dataset.split)));
+  }
+
+  function currentSummary(e){
+    const work = (e.sets||[]).filter(s => s.type === 'work' && numOk(s.weight) && numOk(s.reps));
+    if (!work.length) return null;
+    const top = Math.max(...work.map(s => toNum(s.weight)));
+    return `${top} kg · ${work.length} ${work.length === 1 ? 'Satz' : 'Sätze'}`;
+  }
+
+  function exerciseRow(split, e){
+    if (confirmDelId === e.id){
+      return `<div class="row confirm">
+        <div class="r-name">„${esc(e.name)}" löschen?</div>
+        <div class="r-right">
+          <button class="mini danger" data-confirmdel="${e.id}">Löschen</button>
+          <button class="mini" data-canceldel>Abbrechen</button>
+        </div>
+      </div>`;
+    }
+    const meta = currentSummary(e) || 'noch nichts eingetragen';
+    return `<div class="row" data-ex="${e.id}">
+      <div><div class="r-name">${esc(e.name)}</div><div class="r-meta">${meta}</div></div>
+      <div class="r-right"><button class="icon-btn" data-del="${e.id}" title="Übung löschen">✕</button><span class="chev">›</span></div>
+    </div>`;
+  }
+
+  function renderExercises(){
+    const split = getSplit(nav.splitId);
+    const catsHtml = split.categories.map(cat => {
+      const head = cat.name ? `<div class="cat-head">${esc(cat.name)}</div>` : '';
+      const list = cat.exercises.length
+        ? `<div class="list">${cat.exercises.map(e => exerciseRow(split, e)).join('')}</div>`
+        : `<div class="cat-empty">Noch keine Übung hier.</div>`;
+      const addArea = addingInCat === cat.id
+        ? `<div class="add-form">
+             <input type="text" placeholder="Name der Übung" autocomplete="off">
+             <button class="btn-primary" data-addsave="${cat.id}">Hinzufügen</button>
+             <button class="btn-ghost" data-addcancel>Abbrechen</button>
+           </div>`
+        : `<button class="add-btn" data-add-cat="${cat.id}">+ Neue Übung</button>`;
+      return `<div class="cat">${head}${list}${addArea}</div>`;
+    }).join('');
+
+    app.innerHTML = `<div class="view">
+      <div class="topbar"><button class="back" data-back>‹ Splits</button></div>
+      <div class="eyebrow">Split</div>
+      <h1>${esc(split.name)}</h1>
+      ${catsHtml}
+    </div>`;
+
+    app.querySelector('[data-back]').addEventListener('click', () => go('splits'));
+    app.querySelectorAll('.row[data-ex]').forEach(r => r.addEventListener('click', () => { draft = null; go('log', null, r.dataset.ex); }));
+    app.querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', ev => { ev.stopPropagation(); confirmDelId = b.dataset.del; render(); }));
+    app.querySelectorAll('[data-confirmdel]').forEach(b => b.addEventListener('click', () => delExercise(b.dataset.confirmdel)));
+    app.querySelectorAll('[data-canceldel]').forEach(b => b.addEventListener('click', () => { confirmDelId = null; render(); }));
+    app.querySelectorAll('[data-add-cat]').forEach(b => b.addEventListener('click', () => { addingInCat = b.dataset.addCat; render(); }));
+
+    if (addingInCat){
+      const inp = app.querySelector('.add-form input');
+      const saveBtn = app.querySelector('[data-addsave]');
+      app.querySelector('[data-addcancel]').addEventListener('click', () => { addingInCat = null; render(); });
+      saveBtn.addEventListener('click', () => commitNewExercise(saveBtn.dataset.addsave, inp.value));
+      inp.addEventListener('keydown', ev => {
+        if (ev.key === 'Enter') commitNewExercise(saveBtn.dataset.addsave, inp.value);
+        if (ev.key === 'Escape'){ addingInCat = null; render(); }
+      });
+      inp.focus();
+    }
+  }
+
+  function tagFor(rows, index){
+    let n = 0;
+    for (let i = 0; i <= index; i++) if (rows[i].type === 'work') n++;
+    return rows[index].type === 'warmup' ? 'Warmup' : String(n);
+  }
+
+  function renderLog(){
+    const split = getSplit(nav.splitId);
+    const ex = getEx(split, nav.exerciseId);
+    if (draft === null) draft = (ex.sets && ex.sets.length ? ex.sets : defaultSets()).map(s => ({ ...s }));
+
+    const rows = draft.map((s,i)=>`<div class="set-row">
+      <span class="set-tag ${s.type==='warmup'?'warm':''}">${tagFor(draft,i)}</span>
+      <input class="w" inputmode="decimal" placeholder="0" value="${esc(s.weight)}">
+      <input class="r" inputmode="numeric" placeholder="0" value="${esc(s.reps)}">
+      <button class="icon-btn" data-remove="${i}" title="Zeile entfernen">✕</button>
+    </div>`).join('');
+
+    app.innerHTML = `<div class="view">
+      <div class="topbar"><button class="back" data-back>‹ ${esc(split.name)}</button></div>
+      <div class="log-head"><div class="eyebrow">Übung</div><h1>${esc(ex.name)}</h1></div>
+      <div class="table">
+        <div class="grid-head"><span>Set</span><span>Weight</span><span>Reps</span><span></span></div>
+        ${rows}
+        <div class="row-add">
+          <button data-add="warmup">+ Aufwärmen</button>
+          <button data-add="work">+ Satz</button>
+        </div>
+        <button class="save-btn" data-save>Speichern</button>
+      </div>
+    </div>`;
+
+    app.querySelector('[data-back]').addEventListener('click', () => { syncDraft(); persistDraft(); draft = null; go('exercises'); });
+    app.querySelector('[data-save]').addEventListener('click', saveTable);
+    app.querySelectorAll('[data-add]').forEach(b => b.addEventListener('click', () => addRow(b.dataset.add)));
+    app.querySelectorAll('[data-remove]').forEach(b => b.addEventListener('click', () => removeRow(+b.dataset.remove)));
+  }
+
+  // ---------- Aktionen ----------
+  function commitNewExercise(catId, name){
+    const clean = (name || '').trim();
+    if (!clean){ const inp = app.querySelector('.add-form input'); if (inp) inp.focus(); return; }
+    const cat = getSplit(nav.splitId).categories.find(c => c.id === catId);
+    cat.exercises.push({ id: uid(), name: clean, sets: defaultSets() });
+    addingInCat = null; save(); render();
+  }
+  function delExercise(id){
+    const split = getSplit(nav.splitId);
+    split.categories.forEach(c => c.exercises = c.exercises.filter(e => e.id !== id));
+    confirmDelId = null; save(); render();
+  }
+
+  function syncDraft(){
+    app.querySelectorAll('.set-row').forEach((el, i) => {
+      if (!draft[i]) return;
+      draft[i].weight = el.querySelector('.w').value;
+      draft[i].reps   = el.querySelector('.r').value;
+    });
+  }
+  function persistDraft(){
+    if (!draft) return;
+    const ex = getEx(getSplit(nav.splitId), nav.exerciseId);
+    ex.sets = draft.map(s => ({ type: s.type, weight: s.weight, reps: s.reps }));
+    save();
+  }
+  function addRow(type){
+    syncDraft();
+    if (type === 'warmup') draft.splice(1, 0, { type, weight:'', reps:'' });
+    else draft.push({ type, weight:'', reps:'' });
+    renderLog();
+  }
+  function removeRow(i){ syncDraft(); draft.splice(i,1); renderLog(); }
+  function saveTable(){
+    syncDraft(); persistDraft();
+    const btn = app.querySelector('[data-save]');
+    btn.textContent = 'Gespeichert ✓';
+    btn.style.background = 'var(--green)';
+    setTimeout(() => { btn.textContent = 'Speichern'; btn.style.background = ''; }, 1200);
+  }
+
+  render();
+</script>
+</body>
+</html>
