@@ -6,8 +6,10 @@
 <meta name="theme-color" content="#14161A">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Gym Log">
-<title>Gym Log</title>
+<meta name="apple-mobile-web-app-title" content="Gym Tracker">
+<title>Gym Tracker</title>
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="icon" type="image/png" href="icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
@@ -19,13 +21,13 @@
     --radius: 14px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { background: var(--bg); }
+  html, body { background: var(--bg); overscroll-behavior: none; }
   body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     color: var(--text); min-height: 100vh; -webkit-font-smoothing: antialiased;
     padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
-  #app { max-width: 520px; margin: 0 auto; padding: 22px 18px 40px; min-height: 100vh; }
+  #app { max-width: 520px; margin: 0 auto; padding: 22px 18px 40px; }
 
   .view { animation: rise .28s ease; }
   @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
@@ -43,6 +45,7 @@
   h1 { font-family: 'Oswald'; font-weight: 700; font-size: 34px; letter-spacing: .01em; line-height: 1.05; }
   .sub { color: var(--muted); font-size: 14px; margin-top: 6px; }
   .log-head { text-align: center; }
+  .app-title { text-align: center; margin-top: 8px; }
 
   .cards { display: flex; flex-direction: column; gap: 16px; margin-top: 26px; }
   .card {
@@ -230,9 +233,7 @@
       </div>`;
     }).join('');
     app.innerHTML = `<div class="view">
-      <div class="eyebrow">Gym Log</div>
-      <h1>Splits</h1>
-      <div class="sub">Wähl deinen Trainingstag.</div>
+      <h1 class="app-title">Gym Tracker</h1>
       <div class="cards">${cards}</div>
     </div>`;
     app.querySelectorAll('.card').forEach(c => c.addEventListener('click', () => go('exercises', c.dataset.split)));
@@ -387,6 +388,24 @@
   }
 
   render();
+
+  // Wischen von links nach rechts = eine Seite zurück
+  let _sx = null, _sy = null;
+  document.addEventListener('touchstart', e => {
+    if (e.touches.length !== 1) { _sx = null; return; }
+    _sx = e.touches[0].clientX; _sy = e.touches[0].clientY;
+  }, { passive: true });
+  document.addEventListener('touchend', e => {
+    if (_sx === null) return;
+    const t = e.changedTouches[0];
+    const dx = t.clientX - _sx, dy = t.clientY - _sy;
+    _sx = null;
+    if (dx > 70 && Math.abs(dx) > Math.abs(dy) * 2) goBack();
+  }, { passive: true });
+  function goBack(){
+    if (nav.screen === 'log'){ syncDraft(); persistDraft(); draft = null; go('exercises'); }
+    else if (nav.screen === 'exercises'){ go('splits'); }
+  }
 </script>
 </body>
 </html>
